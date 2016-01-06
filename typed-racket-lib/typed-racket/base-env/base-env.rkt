@@ -992,13 +992,14 @@
           (-> (-seq a b c) (-seq (-lst* a b c)))))]
 [stop-before (-poly (a) ((-seq a) (a . -> . Univ) . -> . (-seq a)))]
 [stop-after (-poly (a) ((-seq a) (a . -> . Univ) . -> . (-seq a)))]
-[make-do-sequence (-poly (a b) ((-> (-values (list (a . -> . b)
-                                                   (a . -> . a)
-                                                   a
-                                                   (Un (a . -> . Univ) (-val #f))
-                                                   (Un (b . -> . Univ) (-val #f))
-                                                   (Un (a b . -> . Univ) (-val #f)))))
-                                . -> . (-seq b)))]
+[make-do-sequence (-polydots (a b)
+			     ((-> (-values (list (a . -> . (make-ValuesDots null b 'b))
+						 (a . -> . a)
+						 a
+						 (Un (a . -> . -Boolean) (-val #f))
+						 (Un (null (b b) . ->... . -Boolean) (-val #f))
+						 (Un ((list a) (b b) . ->... . -Boolean) (-val #f)))))
+			      . -> . (make-ListDots (-seq b) 'b)))]
 [sequence-generate (-poly (a) ((-seq a) . -> . (-values (list (-> -Boolean) (-> a)))))]
 ;; Doesn't work (mu types are single-valued only):
 ;[sequence-generate*  (-poly (a) ((-seq a) . -> . (-mu t (-values (list (Un (-lst a) (-val #f)) t)))))]
