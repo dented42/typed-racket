@@ -156,6 +156,16 @@
   [#:frees (λ (f) (make-invariant (f elem)))]
   [#:key 'vector])
 
+;; dotted vector -- after expansion, becomes normal vector type
+(def-type VectorDots ([dty Type/c] [dbound (or/c symbol? natural-number/c)])
+  [#:frees (if (symbol? dbound)
+               (free-vars-remove (free-vars* dty) dbound)
+               (free-vars* dty))
+           (if (symbol? dbound)
+               (combine-frees (list (single-free-var dbound) (free-idxs* dty)))
+               (free-idxs* dty))]
+  [#:fold-rhs (*VectorDots (type-rec-id dty) dbound)])
+
 ;; elems are all Types
 (def-type HeterogeneousVector ([elems (listof Type/c)])
   [#:intern (map Rep-seq elems)]
@@ -680,6 +690,9 @@
        [#:ListDots dty dbound
                    (*ListDots (sb dty)
                               (transform dbound values dbound))]
+        [#:VectorDots dty dbound
+                   (*VectorDots (sb dty)
+                              (transform dbound values dbound))]
        [#:Mu body (*Mu (loop (add1 outer) body))]
        [#:PolyRow constraints body
                   (*PolyRow constraints (loop (+ 1 outer) body))]
@@ -732,6 +745,9 @@
                                   (transform dbound F-n dbound))]
        [#:ListDots dty dbound
                    (*ListDots (sb dty)
+                              (transform dbound F-n dbound))]
+        [#:VectorDots dty dbound
+                   (*VectorDots (sb dty)
                               (transform dbound F-n dbound))]
        [#:Mu body (*Mu (loop (add1 outer) body))]
        [#:PolyRow constraints body
