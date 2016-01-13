@@ -424,7 +424,7 @@
       [(:List*^ ts ... t)
        (-Tuple* (parse-types #'(ts ...)) (parse-type #'t))]
       [(:Vector^ ts ...)
-       (make-HeterogeneousVector (parse-types #'(ts ...)))]
+       (parse-vector-type stx)]
       [(:cons^ fst rst)
        (-pair (parse-type #'fst) (parse-type #'rst))]
       [(:pred^ t)
@@ -671,6 +671,32 @@
                       (parse-type #'dty))
                     var)))]
       [(:List^ tys ...)
+       (-Tuple (parse-types #'(tys ...)))])))
+
+;; Syntax -> Type
+;; Parse a (Vector ...) type
+(define (parse-vector-type stx)
+  (parameterize ([current-orig-stx stx])
+    (syntax-parse stx
+      [(:Vector^ tys ... dty :ddd/bound)
+       (let ([var (syntax-e #'bound)])
+         (unless (bound-index? var)
+           (if (bound-tvar? var)
+               (tc-error/stx #'bound "Used a type variable (~a) not bound with ... as a bound on a ..." var)
+               (tc-error/stx #'bound "Type variable ~a is unbound" var)))
+         (-Tuple* (parse-types #'(tys ...))
+                  (make-VectorDots
+                   (extend-tvars (list var)
+                     (parse-type #'dty))
+                   var)))]
+      [(:Vector^ tys ... dty _:ddd)
+       (let ([var (infer-index stx)])
+         (-Tuple* (parse-types #'(tys ...))
+                  (make-VectorDots
+                    (extend-tvars (list var)
+                      (parse-type #'dty))
+                    var)))]
+      [(:Vector^ tys ...)
        (-Tuple (parse-types #'(tys ...)))])))
 
 ;; Syntax -> Type
