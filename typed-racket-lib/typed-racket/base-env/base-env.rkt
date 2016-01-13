@@ -999,7 +999,7 @@
 						 (Un (a . -> . -Boolean) (-val #f))
 						 (Un (null (b b) . ->... . -Boolean) (-val #f))
 						 (Un ((list a) (b b) . ->... . -Boolean) (-val #f)))))
-			      . -> . (make-ListDots (-seq b) 'b)))]
+			      . -> . (make-SequenceDots b 'b)))]
 [sequence-generate (-poly (a) ((-seq a) . -> . (-values (list (-> -Boolean) (-> a)))))]
 ;; Doesn't work (mu types are single-valued only):
 ;[sequence-generate*  (-poly (a) ((-seq a) . -> . (-mu t (-values (list (Un (-lst a) (-val #f)) t)))))]
