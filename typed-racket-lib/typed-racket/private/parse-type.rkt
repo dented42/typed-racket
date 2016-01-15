@@ -684,20 +684,18 @@
            (if (bound-tvar? var)
                (tc-error/stx #'bound "Used a type variable (~a) not bound with ... as a bound on a ..." var)
                (tc-error/stx #'bound "Type variable ~a is unbound" var)))
-         (-Tuple* (parse-types #'(tys ...))
-                  (make-VectorDots
-                   (extend-tvars (list var)
-                     (parse-type #'dty))
-                   var)))]
+         (make-VectorDots (parse-types #'(tys ...))
+                          (extend-tvars (list var)
+                                        (parse-type #'dty))
+                          var))]
       [(:Vector^ tys ... dty _:ddd)
        (let ([var (infer-index stx)])
-         (-Tuple* (parse-types #'(tys ...))
-                  (make-VectorDots
-                    (extend-tvars (list var)
-                      (parse-type #'dty))
-                    var)))]
+         (make-VectorDots (parse-types #'(tys ...))
+                          (extend-tvars (list var)
+                                        (parse-type #'dty))
+                          var))]
       [(:Vector^ tys ...)
-       (-Tuple (parse-types #'(tys ...)))])))
+       (apply -vec* (parse-types #'(tys ...)))])))
 
 ;; Syntax -> Type
 ;; Parse a (Values ...) or AnyValues type

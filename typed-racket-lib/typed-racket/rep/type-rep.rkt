@@ -157,14 +157,20 @@
   [#:key 'vector])
 
 ;; dotted vector -- after expansion, becomes normal vector type
-(def-type VectorDots ([dty Type/c] [dbound (or/c symbol? natural-number/c)])
+(def-type VectorDots ([elems Type/c] [dty Type/c] [dbound (or/c symbol? natural-number/c)])
   [#:frees (if (symbol? dbound)
-               (free-vars-remove (free-vars* dty) dbound)
-               (free-vars* dty))
+               (free-vars-remove (combine-frees (list* (free-vars* dty)
+                                                       (map Rep-free-vars elems)))
+                                 dbound)
+               (combine-frees (list* (free-vars* dty)
+                                     (map Rep-free-vars elems))))
            (if (symbol? dbound)
-               (combine-frees (list (single-free-var dbound) (free-idxs* dty)))
-               (free-idxs* dty))]
-  [#:fold-rhs (*VectorDots (type-rec-id dty) dbound)])
+               (combine-frees (list* (single-free-var dbound)
+                                     (free-idxs* dty)
+                                     (map Rep-free-idxs elems)))
+               (combine-frees (list* (free-idxs* dty)
+                                     (map Rep-free-idxs elems))))]
+  [#:fold-rhs (*VectorDots (map type-rec-id elems) (type-rec-id dty) dbound)])
 
 ;; elems are all Types
 (def-type HeterogeneousVector ([elems (listof Type/c)])
@@ -690,9 +696,10 @@
        [#:ListDots dty dbound
                    (*ListDots (sb dty)
                               (transform dbound values dbound))]
-        [#:VectorDots dty dbound
-                   (*VectorDots (sb dty)
-                              (transform dbound values dbound))]
+       [#:VectorDots elems dty dbound
+                     (*VectorDots (map sb elems)
+                                  (sb dty)
+                                  (transform dbound values dbound))]
        [#:Mu body (*Mu (loop (add1 outer) body))]
        [#:PolyRow constraints body
                   (*PolyRow constraints (loop (+ 1 outer) body))]
@@ -746,9 +753,10 @@
        [#:ListDots dty dbound
                    (*ListDots (sb dty)
                               (transform dbound F-n dbound))]
-        [#:VectorDots dty dbound
-                   (*VectorDots (sb dty)
-                              (transform dbound F-n dbound))]
+       [#:VectorDots elems dty dbound
+                     (*VectorDots (map sb elems)
+                                  (sb dty)
+                                  (transform dbound F-n dbound))]
        [#:Mu body (*Mu (loop (add1 outer) body))]
        [#:PolyRow constraints body
                   (*PolyRow constraints (loop (+ 1 outer) body))]
