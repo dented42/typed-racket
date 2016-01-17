@@ -39,7 +39,8 @@
           make-Prompt-Tagof
           make-Prompt-TagTop
           make-StructType make-StructTypeTop
-          make-ListDots))
+          make-ListDots
+          make-VectorDots))
 
 ;; Racket Reference
 ;; Section 4.1
