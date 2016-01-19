@@ -466,6 +466,7 @@
      (cons 'U (append covered (map t->s remaining)))]
     [(Pair: l r) `(Pairof ,(t->s l) ,(t->s r))]
     [(ListDots: dty dbound) `(List ,(t->s dty) ... ,dbound)]
+    [(VectorDots: (list type ...) dtype dbound) `(Vector ,@(map t->s type) ,(t->s dtype) ... ,dbound)]
     [(F: nm) nm]
     ;; FIXME (Values are not types and shouldn't need to be considered here
     [(AnyValues: (Top:)) 'AnyValues]
