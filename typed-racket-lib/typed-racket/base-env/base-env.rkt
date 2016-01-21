@@ -820,12 +820,27 @@
 
 ;; Section 4.11 (Vectors)
 [vector? (make-pred-ty (make-VectorTop))]
-[vector->list (-poly (a) (-> (-vec a) (-lst a)))]
-[list->vector (-poly (a) (-> (-lst a) (-vec a)))]
+[vector->list (-polydots (a b)
+                         (cl->*
+                          (-> (-vec a) (-lst a))
+                          ((make-VectorDots (list a) b 'b) . -> . (-Tuple* (list a)
+                                                                           (make-ListDots b 'b)))))]
+[list->vector (-polydots (a b) (cl->*
+                                ((-lst a) . -> . (-vec a))
+                                (-> (-Tuple* (list a) (make-ListDots b 'b))
+                                    (make-VectorDots (list a) b 'b))))]
 [vector-length ((make-VectorTop) . -> . -Index)]
-[vector (-poly (a) (->* (list) a (-vec a)))]
-[vector-immutable (-poly (a) (->* (list) a (-vec a)))]
-[vector->immutable-vector (-poly (a) (-> (-vec a) (-vec a)))]
+[vector (-polydots (a b) (cl->*
+                          (->* (list) a (-vec a))
+                          (`(,a) (b b) . ->... . (make-VectorDots `(,a) b 'b))))]
+[vector-immutable (-polydots (a b) (cl->*
+                                    (->* (list) a (-vec a))
+                                    (`(,a) (b b) . ->... . (make-VectorDots `(,a) b 'b))))]
+[vector->immutable-vector (-polydots (a b)
+                                     (cl->*
+                                      (-> (-vec a) (-vec a))
+                                      (-> (make-VectorDots (list a) b 'b)
+                                          (make-VectorDots (list a) b 'b))))]
 [vector-fill! (-poly (a) (-> (-vec a) a -Void))]
 [vector-argmax (-poly (a) (-> (-> a -Real) (-vec a) a))]
 [vector-argmin (-poly (a) (-> (-> a -Real) (-vec a) a))]
