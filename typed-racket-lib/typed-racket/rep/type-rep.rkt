@@ -575,6 +575,22 @@
   [#:frees (λ (f) (combine-frees (map f tys)))]
   [#:key #f] [#:fold-rhs (*Sequence (map type-rec-id tys))])
 
+;; dotted list -- after expansion, becomes normal Pair-based list type
+(def-type SequenceDots ([elems Type/c] [dty Type/c] [dbound (or/c symbol? natural-number/c)])
+  [#:frees (if (symbol? dbound)
+               (free-vars-remove (combine-frees (list* (free-vars* dty)
+                                                       (map Rep-free-vars elems)))
+                                 dbound)
+               (combine-frees (list* (free-vars* dty)
+                                     (map Rep-free-vars elems))))
+           (if (symbol? dbound)
+               (combine-frees (list* (single-free-var dbound)
+                                     (free-idxs* dty)
+                                     (map Rep-free-idxs elems)))
+               (combine-frees (list* (free-idxs* dty)
+                                     (map Rep-free-idxs elems))))]
+  [#:fold-rhs (*SequenceDots (map type-rec-id elems) (type-rec-id dty) dbound)])
+
 (def-type Future ([t Type/c]) [#:key 'future])
 
 ;; body: the type of the body
@@ -680,6 +696,10 @@
        [#:ListDots dty dbound
                    (*ListDots (sb dty)
                               (transform dbound values dbound))]
+       [#:SequenceDots elems dty dbound
+                       (*SequenceDots (map sb elems)
+                                    (sb dty)
+                                    (transform dbound values dbound))]
        [#:Mu body (*Mu (loop (add1 outer) body))]
        [#:PolyRow constraints body
                   (*PolyRow constraints (loop (+ 1 outer) body))]
@@ -733,6 +753,10 @@
        [#:ListDots dty dbound
                    (*ListDots (sb dty)
                               (transform dbound F-n dbound))]
+       [#:SequenceDots elems dty dbound
+                       (*SequenceDots (map sb elems)
+                                      (sb dty)
+                                      (transform dbound F-n dbound))]
        [#:Mu body (*Mu (loop (add1 outer) body))]
        [#:PolyRow constraints body
                   (*PolyRow constraints (loop (+ 1 outer) body))]
