@@ -485,7 +485,7 @@
         (~a (syntax-e #'p) " expects one or two type arguments, given "
             (sub1 (length (syntax->list #'(args ...))))))]
       [(:Sequenceof^ t ...)
-       (apply -seq (parse-types #'(t ...)))]
+       (parse-sequence-type stx)]
       ;; curried function notation
       [((~and dom:non-keyword-ty (~not :->^)) ...
         :->^
@@ -699,6 +699,30 @@
       [:AnyValues^ ManyUniv]
       [t
        (-values (list (parse-type #'t)))])))
+
+;; Syntax -> Type
+;; Parse a (Sequenceof ...) type
+(define (parse-sequence-type stx)
+  (parameterize ([current-orig-stx stx])
+    (syntax-parse stx
+      [(:Sequenceof^ tys ... dty :ddd/bound)
+       (let ([var (syntax-e #'bound)])
+         (unless (bound-index? var)
+           (if (bound-tvar? var)
+               (tc-error/stx #'bound "Used a type variable (~a) not bound with ... as a bound on a ..." var)
+               (tc-error/stx #'bound "Type variable ~a is unbound" var)))
+         (make-SequenceDots (parse-types #'(tys ...))
+                            (extend-tvars (list var)
+                                          (parse-type #'dty))
+                            var))]
+      [(:Sequenceof^ tys ... dty _:ddd)
+       (let ([var (infer-index stx)])
+         (make-SequenceDots (parse-types #'(tys ...))
+                            (extend-tvars (list var)
+                                          (parse-type #'dty))
+                            var))]
+      [(:Sequenceof^ tys ...)
+       (apply -seq (parse-types #'(tys ...)))])))
 
 ;;; Utilities for (Class ...) type parsing
 

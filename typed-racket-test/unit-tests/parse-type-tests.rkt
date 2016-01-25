@@ -402,7 +402,12 @@
    [FAIL (Unit (init-depend) String)]
    [FAIL (Unit (import bad) (export) String)]
    [FAIL (Unit (import) (export bad) String)]
+
+   ;; Parsing tests for sequence types
+   [(Sequenceof String) (-seq -String)]
    [(Sequenceof Any Any) (-seq Univ Univ)]
-   ))
+   [(All (A ...) (Sequenceof A ...)) (-polydots (A) (make-SequenceDots '() A 'A))]
+   [(All (A ...) (Sequenceof String A ...)) (-polydots (A) (make-SequenceDots `(,-String) A 'A))]
+   [(All (A ...) (Sequenceof (Listof A) ... A)) (-polydots (A) (make-SequenceDots '() (-lst A) 'A))]))
 
 ;; FIXME - add tests for parse-values-type, parse-tc-results
