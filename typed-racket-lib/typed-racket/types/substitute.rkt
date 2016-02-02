@@ -76,7 +76,14 @@
                                [(ormap (lambda (x) (and (equal? dbound x) (not (bound-tvar? x)))) names) =>
                                 (lambda (name)
                                   (int-err "substitute used on ... variable ~a in type ~a" name target))]
-                               [else (make-ListDots (sb dty) dbound)])])
+                               [else (make-ListDots (sb dty) dbound)])]
+                 [#:SequenceDots types dtype dbound
+                                 (cond
+                                   [(ormap (lambda (x) (and (equal? dbound x) (not (bound-tvar? x)))) names) =>
+                                    (lambda (name)
+                                      (int-err "substitute used on ... variable ~a in type ~a" name target))]
+                                   [else (make-SequenceDots (map sb types) (sb dtype) dbound)])])
+
       target))
 
 
@@ -101,6 +108,15 @@
                                      ([img (in-list (reverse images))])
                                      (make-Pair (substitute img name expanded) t)))
                                  (make-ListDots (sb dty) dbound))]
+                 [#:SequenceDots types dtype dbound
+                                 (if (eq? name dbound)
+                                     ;; We need to recur first, just to expand out any dotted usages of this.
+                                     (let ([dtype* (sb dtype)])
+                                       (make-Sequence
+                                        (append (map sb types)
+                                                (for/list ([img (in-list images)])
+                                                          (substitute img name dtype*)))))
+                                     (make-SequenceDots (map sb types) (sb dtype) dbound))]
                  [#:ValuesDots types dty dbound
                                (if (eq? name dbound)
                                    (if rimage
@@ -152,6 +168,12 @@
                                (if (eq? name dbound) pre-image null)
                                (make-ListDots (sb dty)
                                               (if (eq? name dbound) image-bound dbound)))]
+                 [#:SequenceDots types dtype dbound
+                                 (make-SequenceDots (append (map sb types)
+                                                          (if (eq? name dbound) pre-image null))
+                                                  (sb dtype)
+                                                  (if (eq? name dbound) image-bound dbound))]
+
                  [#:F name*
                       (if (eq? name* name)
                           image
