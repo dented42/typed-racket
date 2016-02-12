@@ -10,12 +10,13 @@
                      "r6rs-lib"
                      "sandbox-lib"
                      "at-exp-lib"
-                     "scribble-lib"
+                     ("scribble-lib" #:version "1.16")
                      "pict-lib"
                      ("typed-racket-lib" #:version "1.3")
                      "typed-racket-compatibility"
                      "typed-racket-more"
-                     "racket-doc"))
+                     "racket-doc"
+                     "draw-lib"))
 (define deps '("base"))
 (define update-implies '("typed-racket-lib"))
 

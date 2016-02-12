@@ -17,7 +17,7 @@
   racket/logging
   racket/private/stx
   (only-in mzscheme make-namespace)
-  (only-in racket/match/runtime match:error matchable? match-equality-test))
+  (only-in racket/match/runtime match:error matchable? match-equality-test syntax-srclocs))
  "base-structs.rkt"
  racket/file
  (only-in racket/private/pre-base new-apply-proc)
@@ -632,15 +632,18 @@
 [memq (-poly (a) (-> Univ (-lst a) (-opt (-ne-lst a))))]
 [memv (-poly (a) (-> Univ (-lst a) (-opt (-ne-lst a))))]
 [memf (-poly (a) ((a . -> . Univ) (-lst a) . -> . (-opt (-ne-lst a))))]
-[member (-poly (a)
+[member (-poly (a b)
           (cl->* (Univ (-lst a) . -> . (-opt (-ne-lst a)))
-                 (Univ (-lst a) (-> a a Univ)
+                 (b (-lst a) (-> b a Univ)
                        . -> . (-opt (-ne-lst a)))))]
 [findf (-poly (a) ((a . -> . B) (-lst a) . -> . (-opt a)))]
 
 [assq  (-poly (a b) (Univ (-lst (-pair a b)) . -> . (-opt (-pair a b))))]
 [assv  (-poly (a b) (Univ (-lst (-pair a b)) . -> . (-opt (-pair a b))))]
-[assoc (-poly (a b) (Univ (-lst (-pair a b)) . -> . (-opt (-pair a b))))]
+[assoc (-poly (a b c)
+              (cl->* (Univ (-lst (-pair a b)) . -> . (-opt (-pair a b)))
+                     (c (-lst (-pair a b)) (-> c a Univ)
+                        . -> . (-opt (-pair a b)))))]
 [assf  (-poly (a b) ((a . -> . Univ) (-lst (-pair a b))
                      . -> . (-opt (-pair a b))))]
 
@@ -768,6 +771,8 @@
                      ((-lst b) b) . ->... .(-lst c)))]
 [append*
  (-poly (a) ((-lst (-lst a)) . -> . (-lst a)))]
+[flatten
+ (Univ . -> . (-lst Univ))]
 [permutations (-poly (a) (-> (-lst a) (-lst (-lst a))))]
 [in-permutations (-poly (a) (-> (-lst a) (-seq (-lst a))))]
 [argmin (-poly (a) ((a . -> . -Real) (-lst a) . -> . a))]
@@ -1170,6 +1175,7 @@
 ;[match:error (Univ . -> . (Un))]
 [match-equality-test (-Param (Univ Univ . -> . Univ) (Univ Univ . -> . Univ))]
 [matchable? (make-pred-ty (Un -String -Bytes))]
+[syntax-srclocs (Univ . -> . Univ)]
 
 ;; Section 10.1
 [values (-polydots (a b) (cl->*
@@ -1940,7 +1946,7 @@
  (->opt -Output-Port -String (-opt -Bytes) [Univ Univ (-opt -Bytes) (-> -String -Output-Port ManyUniv)] -Output-Port)]
 
 [dup-input-port (-Input-Port (B) . ->opt . -Input-Port)]
-[dup-output-port (-Output-Port (B) . ->opt . -Input-Port)]
+[dup-output-port (-Output-Port (B) . ->opt . -Output-Port)]
 
 [relocate-input-port (->opt -Input-Port (-opt -PosInt) (-opt -Nat) -PosInt [Univ] -Input-Port)]
 [relocate-output-port (->opt -Output-Port (-opt -PosInt) (-opt -Nat) -PosInt [Univ] -Output-Port)]
@@ -2604,8 +2610,14 @@
                              -Void)]
 [delete-directory/files (->key -Pathlike #:must-exist? Univ #f -Void)]
 
-[find-files (->optkey (-> -Path Univ) [(-opt -Pathlike)] #:follow-links? Univ #f (-lst -Path))]
-[pathlist-closure (->key (-lst -Pathlike) #:follow-links? Univ #f (-lst -Path))]
+[find-files (->optkey (-> -Path Univ) [(-opt -Pathlike)]
+                      #:skip-filtered-directories? Univ #f
+                      #:follow-links? Univ #f
+                      (-lst -Path))]
+[pathlist-closure (->key (-lst -Pathlike)
+                         #:path-filter (Un (-val #f) (-Path . -> . Univ)) #f
+                         #:follow-links? Univ #f
+                         (-lst -Path))]
 
 [fold-files
  (-poly
@@ -2968,7 +2980,9 @@
 [will-try-execute (-> -Will-Executor ManyUniv)]
 
 ;; Section 16.4
-[collect-garbage (-> -Void)]
+[collect-garbage (cl->*
+                  (-> -Void)
+                  (-> (Un (-val 'minor) (-val 'major) (-val 'incremental)) -Void))]
 [current-memory-use (-> -Nat)]
 [dump-memory-stats (-> Univ)]
 

@@ -2,7 +2,7 @@
 
 (define collection 'multi)
 
-(define deps '(("base" #:version "6.2.900.16")
+(define deps '(("base" #:version "6.3.0.8")
                "pconvert-lib"
                "source-syntax"
                "compatibility-lib" ;; to assign types
@@ -12,4 +12,4 @@
 
 (define pkg-authors '(samth stamourv))
 
-(define version "1.3")
+(define version "1.4")

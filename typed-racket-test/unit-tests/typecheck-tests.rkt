@@ -385,7 +385,7 @@
         (tc-e (- -24.3) -PosFlonum)
         (tc-e/t 34.2f0 -PosSingleFlonum)
         (tc-e/t -34.2f0 -NegSingleFlonum)
-        (tc-e (/ (ann 0 Nonnegative-Real) (ann 1 Nonnegative-Real)) -NonNegReal)
+        (tc-e (/ (ann 0 Nonnegative-Real) (ann 1 Nonnegative-Real)) -Real)
 
         (tc-e (- (ann 1000 Index) 1) -Fixnum)
         (tc-e (- (ann 1000 Positive-Index) 1) -Index)
@@ -416,24 +416,26 @@
         (tc-e (expt 0.5 2) (t:Un -NonNegFlonum -One))
         (tc-e (expt 0.5 0) -One)
         (tc-e (expt -1/2 -1/2) -Number)
-        (tc-e (expt (ann 0.5 Float) (ann 2 Integer)) (t:Un -Flonum -One))
-        (tc-e (expt (ann 0.5f0 Single-Flonum) (ann 2 Integer)) (t:Un -SingleFlonum -One))
+        (tc-e (expt (ann 0.5 Float) (ann 2 Natural)) -Real)
+        (tc-e (expt (ann 0.5f0 Single-Flonum) (ann 2 Natural)) -Real)
         (tc-e (expt (*) -0.0) (t:Un -NonNegFlonum -One))
         (tc-e (expt (*) 2.4521075152139656e-300) (t:Un -NonNegFlonum -One))
         (tc-e (expt (*) -0.0) (t:Un -NonNegFlonum -One))
-        (tc-e (expt -0.0 -1.0) (t:Un -Flonum -FloatComplex))
+        (tc-e (expt -0.0 -1.0) -NonNegFlonum)
         (tc-e (expt 0 (flabs (cos (real->double-flonum 2))))
-              -NonNegReal)
+              -Real)
         (tc-e (expt
                (sub1 (gcd (exact-round 1)))
                (- (ceiling (real->double-flonum -2.6897657f0))))
-              -NonNegReal)
+              -Real)
         (tc-e (expt (sqrt (+)) (cosh (flcos (real->double-flonum 0))))
-              -NonNegReal)
+              -Real)
         (tc-e (expt
                (tan (real->double-flonum 6))
                (lcm (*) (exact-round -1.7976931348623153e+308) 6))
-              (t:Un (-val 1) -Flonum))
+              -Real)
+        (tc-e (exact->inexact (expt 10 (/ -120.0 20))) ; from rsound
+              -NonNegInexactReal)
         (tc-e (flexpt 0.5 0.3) -NonNegFlonum)
         (tc-e (flexpt 0.00000000001 100000000000.0) -NonNegFlonum)
         (tc-e (flexpt -2.0 -0.5) -Flonum) ; NaN
@@ -450,7 +452,17 @@
         (tc-e (min (ann 3 Fixnum) (ann 3 Fixnum)) -Fixnum)
         (tc-e (min (ann -2 Negative-Fixnum) (ann 3 Fixnum)) -NegFixnum)
         (tc-e (min (ann 3 Fixnum) (ann -2 Negative-Fixnum)) -NegFixnum)
+        (tc-e (fl/ 1.7976931348623157e+308 -0.0e0) -Flonum)
+        (tc-e (expt (make-rectangular 3 -1.7976931348623157e+308) (flacos (real->double-flonum 59.316513f0))) (t:Un -Flonum -FloatComplex))
         (tc-e (exact->inexact (ann 3 Number)) (t:Un -InexactReal -InexactComplex))
+        (tc-e (/ (round (exact-round -2.7393196f0)) (real->double-flonum (inexact->exact (real->single-flonum -0.0)))) -Real)
+        (tc-e (bitwise-and (exact-round 1.7976931348623157e+308) (exact-round -29)) -Int)
+        (tc-e (flexpt -0.0 -1.0) -Flonum)
+        (tc-e (expt -0.0f0 -3.0) -Real)
+        (tc-e (expt -8.665778974912815f+107 -677460115195106837726964554590085563061636191189747) -Number)
+        (tc-e (expt (sin +inf.f) +nan.0+nan.0i) -Number)
+        (tc-e (/ (gcd 1 0) -0.0f0 2.718281828459045) -Real)
+        (tc-e (expt (make-polar (floor 6.468476f+31) (tanh +nan.f)) +nan.0) -Number)
         (tc-e (exact->inexact 3) -PosFlonum)
         (tc-e (exact->inexact -3) -NegFlonum)
         (tc-e (real->double-flonum 0.0) -FlonumPosZero)
@@ -2370,6 +2382,31 @@
        [tc-e (vector-memq 3 #(a b c)) (t:Un (-val #f) -Index)]
        [tc-e (vector-memv 3 #(a b c)) (t:Un (-val #f) -Index)]
        [tc-e (vector-member 3 #(a b c)) (t:Un (-val #f) -Index)]
+       ;; Allow needle to be a subtype of the first argument of is-equal?
+       ;; The result type shouldn't be widened to include that type though.
+       [tc-e (member 3
+                     '(a b c)
+                     (lambda: ([s1 : (U Number Symbol String)] [s2 : Symbol])
+                       (= (string-length (format "~a" s1))
+                          (string-length (symbol->string s2)))))
+             (t:Un (-val #f)
+                   (-pair (one-of/c 'a 'b 'c) (-lst (one-of/c 'a 'b 'c))))]
+       [tc-e (assoc 3
+                    '((a . #(a)) (b . #(b)) (c . #(c)))
+                    (lambda: ([s1 : (U Number Symbol String)] [s2 : Symbol])
+                      (= (string-length (format "~a" s1))
+                         (string-length (symbol->string s2)))))
+             (t:Un (-val #f) (-pair (one-of/c 'a 'b 'c) (-vec* -Symbol)))]
+       ;; Reject `member` when needle not included in is-equal?'s argument type:
+       [tc-err (member (ann 123 Number)
+                       '("bb" "c" "ddd")
+                       (lambda ([s1 : String] [s2 : String])
+                         (= (string-length s1) (string-length s2))))]
+       ;; Reject `assoc` when needle not included in is-equal?'s argument type:
+       [tc-err (assoc (ann 123 Number)
+                      '(("bb" . 123) ("c" . 123) ("ddd" . 123))
+                       (lambda ([s1 : String] [s2 : String])
+                         (= (string-length s1) (string-length s2))))]
 
        ;; tests for struct type types
        [tc-e (let-values ([(_1 _2 _3 _4 _5 _6 parent _7)
@@ -3428,12 +3465,11 @@
           (raise "foo"))
         #:ret (ret -String)
         #:msg #rx"expected: String.*given: Any"]
-       [tc-err
+       [tc-e
         (with-handlers ([string? (lambda: ([e : String]) (string-append e "bar"))]
                         [symbol? (lambda (x) (symbol->string x))])
           (raise 'foo))
-        #:ret (ret -String)
-        #:msg #rx"expected: Symbol.*given: Any"]
+        #:ret (ret -String)]
 
        [tc-err
         (raise (λ ([x : Number]) (add1 x)))]
@@ -3799,6 +3835,9 @@
        [tc-e (for*/fold: ((xs : (Listof Symbol) '())) ((x '(a b c)))
                (cons x xs))
              (-lst -Symbol)]
+
+       [tc-e (ann (in-hash (hash)) (Sequenceof Any Any))
+             (-seq Univ Univ)]
        )
 
   (test-suite
